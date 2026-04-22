@@ -112,6 +112,7 @@ fn download_inner(_tx: &Sender<DlMsg>) -> anyhow::Result<PathBuf> {
     } // end #[cfg(windows)]
 }
 
+#[cfg(windows)]
 fn find_file_recursive(dir: &std::path::Path, name: &str) -> anyhow::Result<PathBuf> {
     if dir.is_dir() {
         for entry in std::fs::read_dir(dir)? {

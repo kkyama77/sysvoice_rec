@@ -67,6 +67,10 @@ fn try_load_cjk_font(ctx: &egui::Context) -> bool {
         }
         log::warn!("No CJK font found; Japanese UI disabled.");
     }
+
+    #[cfg(not(windows))]
+    let _ = ctx;
+
     false
 }
 
