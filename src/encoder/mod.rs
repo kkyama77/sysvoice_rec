@@ -17,20 +17,20 @@ pub enum OutputFormat {
 impl OutputFormat {
     pub fn extension(self) -> &'static str {
         match self {
-            Self::Wav  => "wav",
+            Self::Wav => "wav",
             Self::Flac => "flac",
-            Self::Mp3  => "mp3",
-            Self::Aac  => "m4a",
+            Self::Mp3 => "mp3",
+            Self::Aac => "m4a",
             Self::Opus => "opus",
         }
     }
 
     pub fn display_name(self) -> &'static str {
         match self {
-            Self::Wav  => "WAV",
+            Self::Wav => "WAV",
             Self::Flac => "FLAC",
-            Self::Mp3  => "MP3",
-            Self::Aac  => "AAC",
+            Self::Mp3 => "MP3",
+            Self::Aac => "AAC",
             Self::Opus => "Opus",
         }
     }
@@ -55,7 +55,13 @@ impl OutputFormat {
     /// Pass 1: analyse loudness statistics (no output file).
     /// Pass 2: encode with measured values for accurate -14 LUFS normalisation.
     /// `volume_pct`: 100 = -14 LUFS 基準（配信サービスで一般的）, 0–200% の範囲で調整可。
-    pub fn encode_from_wav(self, wav_src: &Path, output_path: &Path, ffmpeg: &Path, volume_pct: u32) -> Result<()> {
+    pub fn encode_from_wav(
+        self,
+        wav_src: &Path,
+        output_path: &Path,
+        ffmpeg: &Path,
+        volume_pct: u32,
+    ) -> Result<()> {
         if matches!(self, Self::Wav) {
             std::fs::copy(wav_src, output_path)?;
             return Ok(());
@@ -63,16 +69,17 @@ impl OutputFormat {
 
         let codec_args: &[&str] = match self {
             Self::Flac => &["-c:a", "flac", "-compression_level", "8"],
-            Self::Mp3  => &["-c:a", "libmp3lame", "-q:a", "2"],
-            Self::Aac  => &["-c:a", "aac", "-b:a", "256k"],
+            Self::Mp3 => &["-c:a", "libmp3lame", "-q:a", "2"],
+            Self::Aac => &["-c:a", "aac", "-b:a", "256k"],
             Self::Opus => &["-c:a", "libopus", "-b:a", "192k"],
-            Self::Wav  => unreachable!(),
+            Self::Wav => unreachable!(),
         };
 
         // ---- Pass 1: measure loudness ----
         let pass1_filter = "loudnorm=I=-14:TP=-1:LRA=11:print_format=json";
         let mut pass1_cmd = Command::new(ffmpeg);
-        pass1_cmd.args(["-y", "-i"])
+        pass1_cmd
+            .args(["-y", "-i"])
             .arg(wav_src)
             .args(["-af", pass1_filter, "-f", "null", "-"]);
         #[cfg(windows)]
@@ -115,7 +122,11 @@ impl OutputFormat {
         let final_filter = format!("{},volume={:.4}", pass2_filter, volume_gain);
 
         let mut cmd = Command::new(ffmpeg);
-        cmd.arg("-y").arg("-i").arg(wav_src).arg("-af").arg(&final_filter);
+        cmd.arg("-y")
+            .arg("-i")
+            .arg(wav_src)
+            .arg("-af")
+            .arg(&final_filter);
         for arg in codec_args {
             cmd.arg(arg);
         }
@@ -137,9 +148,9 @@ impl OutputFormat {
 
 /// Measured loudness values returned by loudnorm pass 1.
 struct LoudnormStats {
-    input_i:      String,
-    input_tp:     String,
-    input_lra:    String,
+    input_i: String,
+    input_tp: String,
+    input_lra: String,
     input_thresh: String,
     target_offset: String,
 }
@@ -173,10 +184,10 @@ fn parse_loudnorm_json(stderr: &str) -> Result<LoudnormStats> {
     }
 
     Ok(LoudnormStats {
-        input_i:       extract(json, "input_i")?,
-        input_tp:      extract(json, "input_tp")?,
-        input_lra:     extract(json, "input_lra")?,
-        input_thresh:  extract(json, "input_thresh")?,
+        input_i: extract(json, "input_i")?,
+        input_tp: extract(json, "input_tp")?,
+        input_lra: extract(json, "input_lra")?,
+        input_thresh: extract(json, "input_thresh")?,
         target_offset: extract(json, "target_offset")?,
     })
 }

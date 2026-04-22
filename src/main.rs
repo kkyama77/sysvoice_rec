@@ -1,4 +1,4 @@
-﻿#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod app;
 mod audio;
@@ -44,7 +44,7 @@ fn make_app_icon() -> egui::IconData {
             if r < 31.0 {
                 let aa = (31.5 - r).clamp(0.0, 1.0);
                 let a = (aa * 255.0) as u8;
-                rgba[i]     = 30;
+                rgba[i] = 30;
                 rgba[i + 1] = 58;
                 rgba[i + 2] = 110;
                 rgba[i + 3] = a;
@@ -54,7 +54,7 @@ fn make_app_icon() -> egui::IconData {
             if r < 14.0 {
                 let aa = (14.5 - r).clamp(0.0, 1.0);
                 let a = (aa * 255.0) as u8;
-                rgba[i]     = 220;
+                rgba[i] = 220;
                 rgba[i + 1] = 45;
                 rgba[i + 2] = 45;
                 rgba[i + 3] = a;
@@ -71,7 +71,7 @@ fn make_app_icon() -> egui::IconData {
                     let edge = 1.0 - dist1 / 1.8;
                     let a = (edge * 210.0) as u8;
                     let t = a as f32 / 255.0;
-                    rgba[i]     = (rgba[i]     as f32 + (255.0 - rgba[i]     as f32) * t) as u8;
+                    rgba[i] = (rgba[i] as f32 + (255.0 - rgba[i] as f32) * t) as u8;
                     rgba[i + 1] = (rgba[i + 1] as f32 + (255.0 - rgba[i + 1] as f32) * t) as u8;
                     rgba[i + 2] = (rgba[i + 2] as f32 + (255.0 - rgba[i + 2] as f32) * t) as u8;
                     rgba[i + 3] = rgba[i + 3].max(a);
@@ -83,7 +83,7 @@ fn make_app_icon() -> egui::IconData {
                     let edge = 1.0 - dist2 / 1.8;
                     let a = (edge * 210.0) as u8;
                     let t = a as f32 / 255.0;
-                    rgba[i]     = (rgba[i]     as f32 + (255.0 - rgba[i]     as f32) * t) as u8;
+                    rgba[i] = (rgba[i] as f32 + (255.0 - rgba[i] as f32) * t) as u8;
                     rgba[i + 1] = (rgba[i + 1] as f32 + (255.0 - rgba[i + 1] as f32) * t) as u8;
                     rgba[i + 2] = (rgba[i + 2] as f32 + (255.0 - rgba[i + 2] as f32) * t) as u8;
                     rgba[i + 3] = rgba[i + 3].max(a);
@@ -92,5 +92,9 @@ fn make_app_icon() -> egui::IconData {
         }
     }
 
-    egui::IconData { rgba, width: W as u32, height: H as u32 }
+    egui::IconData {
+        rgba,
+        width: W as u32,
+        height: H as u32,
+    }
 }

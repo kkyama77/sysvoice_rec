@@ -8,15 +8,29 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
-enum WorkerMsg { Peak(f32), WavDone, WavError(String) }
+enum WorkerMsg {
+    Peak(f32),
+    WavDone,
+    WavError(String),
+}
 
 #[derive(PartialEq)]
-enum Phase { Idle, Recording, Processing, Done, Error }
+enum Phase {
+    Idle,
+    Recording,
+    Processing,
+    Done,
+    Error,
+}
 
 /// 言語に応じた文字列を返す。CJK フォント非利用時は常に en が返る。
 #[inline]
 fn t(lang: Lang, en: &'static str, ja: &'static str) -> &'static str {
-    if lang == Lang::Ja { ja } else { en }
+    if lang == Lang::Ja {
+        ja
+    } else {
+        en
+    }
 }
 
 /// Windows システムフォントから CJK フォントの読み込みを試みる。
@@ -33,15 +47,16 @@ fn try_load_cjk_font(ctx: &egui::Context) -> bool {
         for path in candidates {
             if let Ok(data) = std::fs::read(path) {
                 let mut fonts = egui::FontDefinitions::default();
-                fonts.font_data.insert(
-                    "cjk".to_owned(),
-                    egui::FontData::from_owned(data),
-                );
-                fonts.families
+                fonts
+                    .font_data
+                    .insert("cjk".to_owned(), egui::FontData::from_owned(data));
+                fonts
+                    .families
                     .entry(egui::FontFamily::Proportional)
                     .or_default()
                     .insert(1, "cjk".to_owned());
-                fonts.families
+                fonts
+                    .families
                     .entry(egui::FontFamily::Monospace)
                     .or_default()
                     .push("cjk".to_owned());
@@ -56,24 +71,24 @@ fn try_load_cjk_font(ctx: &egui::Context) -> bool {
 }
 
 pub struct App {
-    settings:      Settings,
-    phase:         Phase,
-    ffmpeg_path:   Option<PathBuf>,
-    capture:       Option<AudioCapture>,
-    stop_flag:     Option<Arc<AtomicBool>>,
-    peak_rx:       Option<Receiver<WorkerMsg>>,
-    fin_rx:        Option<Receiver<String>>,
-    temp_wav:      Option<PathBuf>,
-    record_start:  Option<Instant>,
-    result_rx:     Option<Receiver<Result<PathBuf, String>>>,
-    dl_rx:         Option<Receiver<DlMsg>>,
-    dl_failed:     bool,
-    dl_error:      Option<String>,
-    peak_level:    f32,
-    peak_hold:     f32,
-    last_output:   Option<PathBuf>,
-    last_error:    Option<String>,
-    status_msg:    String,
+    settings: Settings,
+    phase: Phase,
+    ffmpeg_path: Option<PathBuf>,
+    capture: Option<AudioCapture>,
+    stop_flag: Option<Arc<AtomicBool>>,
+    peak_rx: Option<Receiver<WorkerMsg>>,
+    fin_rx: Option<Receiver<String>>,
+    temp_wav: Option<PathBuf>,
+    record_start: Option<Instant>,
+    result_rx: Option<Receiver<Result<PathBuf, String>>>,
+    dl_rx: Option<Receiver<DlMsg>>,
+    dl_failed: bool,
+    dl_error: Option<String>,
+    peak_level: f32,
+    peak_hold: f32,
+    last_output: Option<PathBuf>,
+    last_error: Option<String>,
+    status_msg: String,
     /// CJK フォントが正常に読み込まれた場合のみ true。
     cjk_available: bool,
 }
@@ -81,9 +96,11 @@ pub struct App {
 impl App {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         let cjk_available = try_load_cjk_font(&cc.egui_ctx);
-        let mut settings  = Settings::load();
+        let mut settings = Settings::load();
         // CJK フォントが使えない場合は強制的に英語に戻す
-        if !cjk_available { settings.lang = Lang::En; }
+        if !cjk_available {
+            settings.lang = Lang::En;
+        }
         let ffmpeg_path = settings.find_ffmpeg();
 
         // clean up any leftover temp WAVs from previous crashes
@@ -108,66 +125,88 @@ impl App {
                 ffmpeg_manager::start_download(tx);
                 (Some(rx), String::from("Fetching ffmpeg..."))
             } else {
-                (None, String::from("ffmpeg not found - install it manually to enable MP3/FLAC/AAC/Opus"))
+                (
+                    None,
+                    String::from(
+                        "ffmpeg not found - install it manually to enable MP3/FLAC/AAC/Opus",
+                    ),
+                )
             }
         } else {
             (None, String::from("ffmpeg found - all formats available"))
         };
 
         Self {
-            settings, phase: Phase::Idle, ffmpeg_path,
-            capture: None, stop_flag: None, peak_rx: None, fin_rx: None,
-            temp_wav: None, record_start: None, result_rx: None,
-            dl_rx, dl_failed: false, dl_error: None,
-            peak_level: 0.0, peak_hold: 0.0,
-            last_output: None, last_error: None, status_msg,
+            settings,
+            phase: Phase::Idle,
+            ffmpeg_path,
+            capture: None,
+            stop_flag: None,
+            peak_rx: None,
+            fin_rx: None,
+            temp_wav: None,
+            record_start: None,
+            result_rx: None,
+            dl_rx,
+            dl_failed: false,
+            dl_error: None,
+            peak_level: 0.0,
+            peak_hold: 0.0,
+            last_output: None,
+            last_error: None,
+            status_msg,
             cjk_available,
         }
     }
 
-
     fn retry_download(&mut self) {
         if !ffmpeg_manager::supports_auto_download() {
             self.dl_failed = true;
-            self.dl_error = Some(String::from("Automatic ffmpeg download is unsupported on this OS."));
+            self.dl_error = Some(String::from(
+                "Automatic ffmpeg download is unsupported on this OS.",
+            ));
             self.status_msg = String::from("Install ffmpeg manually and restart the app.");
             return;
         }
         let (tx, rx) = crossbeam_channel::bounded::<DlMsg>(8);
         ffmpeg_manager::start_download(tx);
-        self.dl_rx     = Some(rx);
+        self.dl_rx = Some(rx);
         self.dl_failed = false;
-        self.dl_error  = None;
+        self.dl_error = None;
         self.status_msg = String::from("Retrying ffmpeg download...");
     }
 
     fn start_recording(&mut self) {
         let epoch = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
         let temp_wav = std::env::temp_dir().join(format!("sysvoice_{epoch}.wav"));
         let (samples_tx, samples_rx) = crossbeam_channel::bounded::<Vec<f32>>(512);
-        let (worker_tx, worker_rx)   = crossbeam_channel::bounded::<WorkerMsg>(256);
-        let (fin_tx, fin_rx_inner)   = crossbeam_channel::bounded::<String>(1);
-        let stop_flag  = Arc::new(AtomicBool::new(false));
+        let (worker_tx, worker_rx) = crossbeam_channel::bounded::<WorkerMsg>(256);
+        let (fin_tx, fin_rx_inner) = crossbeam_channel::bounded::<String>(1);
+        let stop_flag = Arc::new(AtomicBool::new(false));
         let stop_flag2 = Arc::clone(&stop_flag);
         let capture = match AudioCapture::start(samples_tx) {
-            Ok(c)  => c,
+            Ok(c) => c,
             Err(e) => {
-                self.phase      = Phase::Error;
+                self.phase = Phase::Error;
                 self.last_error = Some(format!("Failed to start device: {e}"));
                 return;
             }
         };
         let sample_rate = capture.sample_rate;
-        let channels    = capture.channels;
-        let wav_path    = temp_wav.clone();
+        let channels = capture.channels;
+        let wav_path = temp_wav.clone();
         std::thread::spawn(move || {
             let spec = hound::WavSpec {
-                channels, sample_rate, bits_per_sample: 32,
+                channels,
+                sample_rate,
+                bits_per_sample: 32,
                 sample_format: hound::SampleFormat::Float,
             };
             let mut writer = match hound::WavWriter::create(&wav_path, spec) {
-                Ok(w)  => w,
+                Ok(w) => w,
                 Err(e) => {
                     let _ = worker_tx.send(WorkerMsg::WavError(e.to_string()));
                     let _ = fin_tx.send(e.to_string());
@@ -175,12 +214,14 @@ impl App {
                 }
             };
             let mut peak_buf = 0.0f32;
-            let mut count    = 0usize;
+            let mut count = 0usize;
             const UPDATE_EVERY: usize = 2048;
             loop {
                 if stop_flag2.load(Ordering::Relaxed) {
                     while let Ok(samples) = samples_rx.try_recv() {
-                        for s in samples { let _ = writer.write_sample(s); }
+                        for s in samples {
+                            let _ = writer.write_sample(s);
+                        }
                     }
                     break;
                 }
@@ -188,12 +229,15 @@ impl App {
                     Ok(samples) => {
                         for &s in &samples {
                             let _ = writer.write_sample(s);
-                            if s.abs() > peak_buf { peak_buf = s.abs(); }
+                            if s.abs() > peak_buf {
+                                peak_buf = s.abs();
+                            }
                             count += 1;
                         }
                         if count >= UPDATE_EVERY {
                             let _ = worker_tx.try_send(WorkerMsg::Peak(peak_buf));
-                            peak_buf = 0.0; count = 0;
+                            peak_buf = 0.0;
+                            count = 0;
                         }
                     }
                     Err(crossbeam_channel::RecvTimeoutError::Disconnected) => break,
@@ -201,7 +245,10 @@ impl App {
                 }
             }
             match writer.finalize() {
-                Ok(_)  => { let _ = worker_tx.send(WorkerMsg::WavDone); let _ = fin_tx.send(String::new()); }
+                Ok(_) => {
+                    let _ = worker_tx.send(WorkerMsg::WavDone);
+                    let _ = fin_tx.send(String::new());
+                }
                 Err(e) => {
                     let m = e.to_string();
                     let _ = worker_tx.send(WorkerMsg::WavError(m.clone()));
@@ -209,49 +256,73 @@ impl App {
                 }
             }
         });
-        self.capture      = Some(capture); self.stop_flag  = Some(stop_flag);
-        self.peak_rx      = Some(worker_rx); self.fin_rx   = Some(fin_rx_inner);
-        self.temp_wav     = Some(temp_wav); self.record_start = Some(Instant::now());
-        self.phase        = Phase::Recording;
-        self.last_error   = None; self.last_output = None;
-        self.status_msg   = String::from("Recording...");
+        self.capture = Some(capture);
+        self.stop_flag = Some(stop_flag);
+        self.peak_rx = Some(worker_rx);
+        self.fin_rx = Some(fin_rx_inner);
+        self.temp_wav = Some(temp_wav);
+        self.record_start = Some(Instant::now());
+        self.phase = Phase::Recording;
+        self.last_error = None;
+        self.last_output = None;
+        self.status_msg = String::from("Recording...");
     }
 
     fn stop_recording(&mut self) {
-        if let Some(flag) = self.stop_flag.take() { flag.store(true, Ordering::Relaxed); }
-        self.capture = None; self.peak_rx = None; self.record_start = None;
-        let temp_wav = match self.temp_wav.take() { Some(p) => p, None => return };
-        let fin_rx   = match self.fin_rx.take() { Some(r) => r, None => return };
-        let format    = self.settings.output_format;
-        let save_dir  = self.settings.save_directory.clone();
-        let ffmpeg    = self.ffmpeg_path.clone();
+        if let Some(flag) = self.stop_flag.take() {
+            flag.store(true, Ordering::Relaxed);
+        }
+        self.capture = None;
+        self.peak_rx = None;
+        self.record_start = None;
+        let temp_wav = match self.temp_wav.take() {
+            Some(p) => p,
+            None => return,
+        };
+        let fin_rx = match self.fin_rx.take() {
+            Some(r) => r,
+            None => return,
+        };
+        let format = self.settings.output_format;
+        let save_dir = self.settings.save_directory.clone();
+        let ffmpeg = self.ffmpeg_path.clone();
         let volume_pct = self.settings.volume_pct;
         let (res_tx, res_rx) = crossbeam_channel::bounded::<Result<PathBuf, String>>(1);
-        self.result_rx  = Some(res_rx);
-        self.phase      = Phase::Processing;
+        self.result_rx = Some(res_rx);
+        self.phase = Phase::Processing;
         self.status_msg = String::from("Converting & saving...");
         std::thread::spawn(move || {
             let status = match fin_rx.recv_timeout(std::time::Duration::from_secs(60)) {
-                Ok(s)  => s,
-                Err(_) => { let _ = res_tx.send(Err(String::from("WAV write timeout"))); return; }
+                Ok(s) => s,
+                Err(_) => {
+                    let _ = res_tx.send(Err(String::from("WAV write timeout")));
+                    return;
+                }
             };
             if !status.is_empty() {
                 let _ = res_tx.send(Err(format!("WAV error: {status}")));
                 return;
             }
             let epoch2 = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
-            let filename    = format!("recording_{epoch2}.{}", format.extension());
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs();
+            let filename = format!("recording_{epoch2}.{}", format.extension());
             let output_path = save_dir.join(&filename);
             let result = if format.requires_ffmpeg() {
                 match ffmpeg {
-                    Some(ff) => format.encode_from_wav(&temp_wav, &output_path, &ff, volume_pct)
-                        .map(|_| output_path.clone()).map_err(|e| e.to_string()),
-                    None => Err(String::from("ffmpeg is downloading. Please wait and try again.")),
+                    Some(ff) => format
+                        .encode_from_wav(&temp_wav, &output_path, &ff, volume_pct)
+                        .map(|_| output_path.clone())
+                        .map_err(|e| e.to_string()),
+                    None => Err(String::from(
+                        "ffmpeg is downloading. Please wait and try again.",
+                    )),
                 }
             } else {
                 std::fs::copy(&temp_wav, &output_path)
-                    .map(|_| output_path.clone()).map_err(|e| e.to_string())
+                    .map(|_| output_path.clone())
+                    .map_err(|e| e.to_string())
             };
             let _ = std::fs::remove_file(&temp_wav);
             let _ = res_tx.send(result);
@@ -261,23 +332,31 @@ impl App {
     fn poll_state(&mut self) {
         let dl_msgs: Vec<DlMsg> = if let Some(rx) = &self.dl_rx {
             let mut v = Vec::new();
-            while let Ok(m) = rx.try_recv() { v.push(m); }
+            while let Ok(m) = rx.try_recv() {
+                v.push(m);
+            }
             v
-        } else { vec![] };
+        } else {
+            vec![]
+        };
         for msg in dl_msgs {
             match msg {
-                DlMsg::Downloading => { self.status_msg = String::from("Downloading ffmpeg..."); }
-                DlMsg::Extracting  => { self.status_msg = String::from("Extracting ffmpeg..."); }
-                DlMsg::Done(path)  => {
+                DlMsg::Downloading => {
+                    self.status_msg = String::from("Downloading ffmpeg...");
+                }
+                DlMsg::Extracting => {
+                    self.status_msg = String::from("Extracting ffmpeg...");
+                }
+                DlMsg::Done(path) => {
                     self.ffmpeg_path = Some(path);
-                    self.dl_rx       = None;
-                    self.status_msg  = String::from("All formats available");
+                    self.dl_rx = None;
+                    self.status_msg = String::from("All formats available");
                     self.settings.save();
                 }
                 DlMsg::Failed(e) => {
-                    self.dl_rx     = None;
+                    self.dl_rx = None;
                     self.dl_failed = true;
-                    self.dl_error  = Some(e.clone());
+                    self.dl_error = Some(e.clone());
                     self.status_msg = format!("ffmpeg download failed: {e}");
                 }
             }
@@ -285,9 +364,16 @@ impl App {
         if let Some(rx) = &self.peak_rx {
             while let Ok(msg) = rx.try_recv() {
                 match msg {
-                    WorkerMsg::Peak(p)     => { if p > self.peak_level { self.peak_level = p; } }
-                    WorkerMsg::WavError(e) => { self.last_error = Some(e); self.phase = Phase::Error; }
-                    WorkerMsg::WavDone     => {}
+                    WorkerMsg::Peak(p) => {
+                        if p > self.peak_level {
+                            self.peak_level = p;
+                        }
+                    }
+                    WorkerMsg::WavError(e) => {
+                        self.last_error = Some(e);
+                        self.phase = Phase::Error;
+                    }
+                    WorkerMsg::WavDone => {}
                 }
             }
         }
@@ -296,26 +382,30 @@ impl App {
                 self.result_rx = None;
                 match result {
                     Ok(path) => {
-                        self.last_output = Some(path); self.phase = Phase::Done;
-                        self.status_msg  = String::from("Saved!");
+                        self.last_output = Some(path);
+                        self.phase = Phase::Done;
+                        self.status_msg = String::from("Saved!");
                         self.settings.save();
                     }
                     Err(e) => {
-                        self.last_error = Some(e); self.phase = Phase::Error;
+                        self.last_error = Some(e);
+                        self.phase = Phase::Error;
                         self.status_msg = String::from("Error");
                     }
                 }
             }
         }
     }
-
 }
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.poll_state();
-        if self.peak_level > self.peak_hold { self.peak_hold = self.peak_level; }
-        else { self.peak_hold *= 0.97; }
+        if self.peak_level > self.peak_hold {
+            self.peak_hold = self.peak_level;
+        } else {
+            self.peak_hold *= 0.97;
+        }
         self.peak_level *= 0.75;
         let downloading = self.dl_rx.is_some();
         if matches!(self.phase, Phase::Recording | Phase::Processing) || downloading {

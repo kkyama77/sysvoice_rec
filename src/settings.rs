@@ -5,10 +5,17 @@ use std::path::PathBuf;
 
 /// UI 表示言語。
 #[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Debug)]
-pub enum Lang { En, Ja }
+pub enum Lang {
+    En,
+    Ja,
+}
 
-fn default_volume_pct() -> u32 { 100 }
-fn default_lang() -> Lang { Lang::En }
+fn default_volume_pct() -> u32 {
+    100
+}
+fn default_lang() -> Lang {
+    Lang::En
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Settings {
@@ -43,7 +50,9 @@ impl Settings {
         let path = Self::config_path();
         if path.exists() {
             if let Ok(json) = std::fs::read_to_string(&path) {
-                if let Ok(s) = serde_json::from_str::<Settings>(&json) { return s; }
+                if let Ok(s) = serde_json::from_str::<Settings>(&json) {
+                    return s;
+                }
             }
         }
         Default::default()
@@ -51,8 +60,12 @@ impl Settings {
 
     pub fn save(&self) {
         let path = Self::config_path();
-        if let Some(parent) = path.parent() { let _ = std::fs::create_dir_all(parent); }
-        if let Ok(json) = serde_json::to_string_pretty(self) { let _ = std::fs::write(&path, json); }
+        if let Some(parent) = path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        if let Ok(json) = serde_json::to_string_pretty(self) {
+            let _ = std::fs::write(&path, json);
+        }
     }
 
     /// Find ffmpeg binary.
@@ -62,16 +75,24 @@ impl Settings {
     /// 4. System PATH
     pub fn find_ffmpeg(&self) -> Option<PathBuf> {
         if let Some(p) = &self.ffmpeg_path {
-            if p.exists() { return Some(p.clone()); }
+            if p.exists() {
+                return Some(p.clone());
+            }
         }
         let cached = ffmpeg_manager::cached_ffmpeg_path();
-        if cached.exists() { return Some(cached); }
+        if cached.exists() {
+            return Some(cached);
+        }
         if let Ok(exe) = std::env::current_exe() {
             if let Some(dir) = exe.parent() {
-                #[cfg(windows)] let name = "ffmpeg.exe";
-                #[cfg(not(windows))] let name = "ffmpeg";
+                #[cfg(windows)]
+                let name = "ffmpeg.exe";
+                #[cfg(not(windows))]
+                let name = "ffmpeg";
                 let c = dir.join(name);
-                if c.exists() { return Some(c); }
+                if c.exists() {
+                    return Some(c);
+                }
             }
         }
         which::which("ffmpeg").ok()
