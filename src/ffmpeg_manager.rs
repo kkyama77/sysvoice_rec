@@ -38,7 +38,7 @@ pub fn start_download(tx: Sender<DlMsg>) {
     });
 }
 
-fn download_inner(tx: &Sender<DlMsg>) -> anyhow::Result<PathBuf> {
+fn download_inner(_tx: &Sender<DlMsg>) -> anyhow::Result<PathBuf> {
     #[cfg(not(windows))]
     anyhow::bail!(
         "Automatic ffmpeg download is only supported on Windows. Please install ffmpeg manually."
@@ -57,7 +57,7 @@ fn download_inner(tx: &Sender<DlMsg>) -> anyhow::Result<PathBuf> {
         let zip_path = cache_dir.join("ffmpeg_dl.zip");
         let extract_dir = cache_dir.join("extracted");
 
-        let _ = tx.send(DlMsg::Downloading);
+        let _ = _tx.send(DlMsg::Downloading);
 
         let url = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip";
 
@@ -73,7 +73,7 @@ fn download_inner(tx: &Sender<DlMsg>) -> anyhow::Result<PathBuf> {
             anyhow::bail!("download failed");
         }
 
-        let _ = tx.send(DlMsg::Extracting);
+        let _ = _tx.send(DlMsg::Extracting);
         std::fs::create_dir_all(&extract_dir)?;
 
         let ex_cmd = format!(
