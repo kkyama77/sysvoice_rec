@@ -27,10 +27,6 @@ pub fn cached_ffmpeg_path() -> PathBuf {
         .join(exe_name)
 }
 
-pub fn is_cached() -> bool {
-    cached_ffmpeg_path().exists()
-}
-
 pub fn start_download(tx: Sender<DlMsg>) {
     std::thread::spawn(move || match download_inner(&tx) {
         Ok(path) => {
