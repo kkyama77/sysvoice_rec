@@ -76,7 +76,7 @@ impl OutputFormat {
         };
 
         // ---- Pass 1: measure loudness ----
-        let pass1_filter = "loudnorm=I=-14:TP=-1:LRA=11:print_format=json";
+        let pass1_filter = "loudnorm=I=-9:TP=-1:LRA=11:print_format=json";
         let mut pass1_cmd = Command::new(ffmpeg);
         pass1_cmd
             .args(["-y", "-i"])
@@ -103,10 +103,10 @@ impl OutputFormat {
         // If pass1 returned -inf (e.g. silence), fall back to single-pass loudnorm
         let pass2_filter = if stats.input_i.contains("inf") || stats.input_tp.contains("inf") {
             log::warn!("loudnorm pass1 returned -inf, falling back to single-pass");
-            "loudnorm=I=-14:TP=-1:LRA=11".to_owned()
+            "loudnorm=I=-9:TP=-1:LRA=11".to_owned()
         } else {
             format!(
-                "loudnorm=I=-14:TP=-1:LRA=11\
+                "loudnorm=I=-9:TP=-1:LRA=11\
                  :measured_I={}:measured_TP={}:measured_LRA={}:measured_thresh={}\
                  :offset={}:linear=true",
                 stats.input_i,

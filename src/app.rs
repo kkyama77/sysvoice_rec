@@ -487,11 +487,20 @@ impl eframe::App for App {
             });
             ui.label(
                 egui::RichText::new(t(lang,
-                    "  100% = baseline (-14 LUFS, common streaming target)   range: 0-200%",
-                    "  100% = \u{57fa}\u{6e96}\u{5024} (-14 LUFS\u{3001}\u{914d}\u{4fe1}\u{30b5}\u{30fc}\u{30d3}\u{30b9}\u{3067}\u{4e00}\u{822c}\u{7684})  0\u{2013}200% \u{3067}\u{8abf}\u{6574}\u{53ef}"))
+                    "  100% volume corresponds to -9 LUFS",
+                    "  100% \u{306e}\u{97f3}\u{91cf}\u{306f} -9 LUFS \u{3067}\u{3059}"))
                     .color(egui::Color32::GRAY)
                     .small()
             );
+            if self.settings.volume_pct > 150 {
+                ui.label(
+                    egui::RichText::new(t(lang,
+                        "  \u{26a0} High volume (>150%) may cause clipping or distortion.",
+                        "  \u{26a0} \u{9ad8}\u{97f3}\u{91cf}\u{8a2d}\u{5b9a} (150%\u{8d85}) \u{3067}\u{306f}\u{3001}\u{97f3}\u{5272}\u{308c}\u{30fb}\u{6b6a}\u{307f}\u{30fb}\u{30af}\u{30ea}\u{30c3}\u{30d7}\u{304c}\u{751f}\u{3058}\u{308b}\u{53ef}\u{80fd}\u{6027}\u{304c}\u{3042}\u{308a}\u{307e}\u{3059}\u{3002}"))
+                        .color(egui::Color32::from_rgb(220, 150, 40))
+                        .small()
+                );
+            }
 
             // -- ffmpeg help panel --
             if self.ffmpeg_path.is_none() {
