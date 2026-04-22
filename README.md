@@ -186,3 +186,194 @@ GitHub Actions の公式アクションや `actions-rs` を使うと簡単にセ
 ---
 
 必要なら、この README にプロジェクト固有のセットアップ手順（外部サービスの API キー、DB のセットアップ手順、ビルドのカスタムフラグなど）を追記します。どのような開発フローにしたいか教えてください（例: Windows ネイティブビルド重視 / WSL 利用 / cross-compilation など）。
+
+---
+
+# sysvoice_rec (English)
+
+A desktop GUI application for Windows / Linux that records audio in real time and saves it as WAV / FLAC / MP3 / AAC / Opus.
+
+## Main Features
+- **Audio capture**
+  - Windows: WASAPI loopback (system output audio)
+  - Linux: default input device (microphone, etc.)
+- **Multiple output formats** - WAV is saved directly; other formats are encoded via ffmpeg
+- **Loudness normalization** - automatically normalizes to -14 LUFS after recording (loudnorm)
+- **ffmpeg management** - auto-download on Windows when missing; manual install guidance on Linux
+- **Persistent settings** - save directory and output format are stored automatically
+
+## Requirements
+- **OS**: Windows 10 / 11 or Linux
+- **Rust**: stable 1.70+
+- **ffmpeg**: required for non-WAV formats (auto-download supported in-app)
+
+## Build & Run
+```powershell
+cargo run --release
+```
+
+## Notes
+- On Linux, this app records from the default input device (microphone, etc.), not system loopback audio
+- Automatic ffmpeg download is supported only on Windows
+- If the app is force-closed during recording, `%TEMP%\sysvoice_*.wav` may remain, but it will be cleaned up automatically on next startup
+
+---
+
+# sysvoice_rec - Rust Development Environment Setup Guide (English)
+
+This section summarizes steps to start Rust development in this repository. It assumes a Windows environment (WSL optional), but almost all steps also apply to Linux / macOS.
+
+## Table of Contents
+- Overview
+- Prerequisites
+- Install Rust (Windows)
+- Install common tools
+- Recommended VS Code settings
+- Create a new project and basic commands
+- Formatting and static analysis
+- Debugging
+- CI (GitHub Actions) example
+- Troubleshooting / Reference links
+
+---
+
+## Overview
+This README includes the minimum recommended steps and tools for comfortable local Rust development. Add project-specific rules (formatting, lint rules, etc.) as needed.
+
+---
+
+## Prerequisites
+- Internet connection
+- Administrator privileges (may be required for some Windows installations)
+- Terminal (PowerShell / cmd / WSL / Windows Terminal, etc.)
+
+If you use Windows 10/11, using WSL2 + Ubuntu makes Linux builds easier. If you use WSL, run the following steps inside WSL.
+
+---
+
+## Install Rust (Windows)
+The officially recommended toolchain manager is `rustup`. On Windows, the installer is the easiest path.
+
+1. Use the official installer (GUI):
+   - Go to https://rust-lang.org, open "Install", download the Windows Installer, and run it.
+
+2. Install via command line (PowerShell example):
+   - Open PowerShell (admin not required) and run:
+     - `Invoke-WebRequest -Uri https://sh.rustup.rs -OutFile rustup-init.sh`
+     - Run `sh rustup-init.sh` and follow the steps (WSL / Git Bash / MSYS2 recommended).
+
+3. Verify installation:
+   - `rustc --version`
+   - `cargo --version`
+   - `rustup --version`
+
+After installation, `stable` is set by default. Switch toolchains if needed:
+- `rustup default stable`
+- `rustup toolchain install nightly`
+- `rustup default nightly` (if needed)
+
+---
+
+## Install Common Tools
+- rustfmt (code formatter)
+  - `rustup component add rustfmt`
+- clippy (lint tool)
+  - `rustup component add clippy`
+- Others (optional)
+  - `rustup component add rls` (legacy tool; rust-analyzer is recommended now)
+
+If you use native libraries on Windows, you may need Visual Studio Build Tools (C++ build tools). For the MSVC toolchain, install Visual Studio "C++ Build Tools". For GNU toolchain, consider MinGW or MSYS2.
+
+---
+
+## Recommended VS Code Settings
+- Extensions:
+  - `rust-lang.rust-analyzer` (recommended)
+  - `matklad.rust-analyzer` (old ID; use the one above now)
+  - `vadimcn.vscode-lldb` (CodeLLDB debugger)
+  - `ms-vscode.cpptools` (if native extension support is needed)
+
+- Recommended settings (example entries for workspace `.vscode/settings.json`):
+    "rust-analyzer.cargo.runBuildScripts": true  
+    "rust-analyzer.procMacro.enable": true  
+    "editor.formatOnSave": true  
+    "editor.defaultFormatter": "rust-lang.rust-analyzer"
+
+(Write the above key-value pairs in proper JSON format in `.vscode/settings.json`.)
+
+---
+
+## Create a New Project and Basic Commands
+1. Create a new binary project
+   - `cargo new my_app --bin`
+2. Create a library project
+   - `cargo new my_lib --lib`
+3. Build
+   - `cargo build` (debug build)
+   - `cargo build --release` (optimized build)
+4. Run
+   - `cargo run`
+   - `cargo run --release`
+5. Test
+   - `cargo test`
+6. Generate docs
+   - `cargo doc --open`
+7. Add dependencies
+   - `cargo add <crate>` (requires `cargo-edit` installed first)
+   - Example: `cargo install cargo-edit` -> `cargo add anyhow`
+
+---
+
+## Formatting and Static Analysis
+- Format code:
+  - `cargo fmt` (file-scoped: `cargo fmt -- <path>`)
+- Lint:
+  - `cargo clippy`
+  - Common option: `cargo clippy -- -D warnings` (treat warnings as errors)
+
+In CI, `cargo fmt -- --check` and `cargo clippy -- -D warnings` are commonly used to enforce style and quality.
+
+---
+
+## Debugging
+- VS Code + CodeLLDB is a common setup.
+- Launch config example (`.vscode/launch.json`): debug settings vary by project. Create a basic Rust + CodeLLDB configuration.
+- When using the MSVC toolchain on Windows, symbol information is required; debug info is included by default in `cargo build`.
+
+---
+
+## CI (GitHub Actions) Example
+Below is a simple workflow outline for GitHub Actions. Place the workflow file at `.github/workflows/ci.yml`.
+
+You can write YAML as plain text with indentation. Typical steps:
+- Checkout
+- Install Rust toolchain (e.g., using `actions-rs/toolchain`)
+- `cargo build --verbose`
+- `cargo test --verbose`
+- `cargo fmt -- --check`
+- `cargo clippy -- -D warnings`
+
+Using official GitHub Actions and/or `actions-rs` simplifies setup.
+
+---
+
+## Troubleshooting
+- `rustc` / `cargo` not found:
+  - Check whether rustup cargo bin is in PATH (e.g., `%USERPROFILE%\.cargo\bin`)
+  - Restart your terminal to apply changes.
+- Native library link errors:
+  - Check Visual Studio Build Tools (MSVC), or MSYS2 / MinGW setup.
+- rust-analyzer not working:
+  - Restart VS Code, reinstall extension, and verify rust-analyzer settings.
+
+---
+
+## Reference Links
+- Rust official: https://www.rust-lang.org/
+- rustup: https://rust-lang.github.io/rustup/
+- rust-analyzer: https://rust-analyzer.github.io/
+- Cargo Book: https://doc.rust-lang.org/cargo/
+
+---
+
+If needed, we can add project-specific setup steps to this README (external API keys, DB setup, custom build flags, etc.). Let us know your preferred workflow (e.g., Windows-native focus / WSL / cross-compilation).
