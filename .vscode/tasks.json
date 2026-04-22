@@ -1,0 +1,263 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "cargo: build (debug)",
+      "type": "shell",
+      "command": "cargo",
+      "args": [
+        "build"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        "$rustc"
+      ],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false,
+        "focus": false
+      },
+      "detail": "Build the workspace in debug mode"
+    },
+    {
+      "label": "cargo: build (release)",
+      "type": "shell",
+      "command": "cargo",
+      "args": [
+        "build",
+        "--release"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "problemMatcher": [
+        "$rustc"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "detail": "Build the workspace in release mode"
+    },
+    {
+      "label": "cargo: run (debug)",
+      "type": "shell",
+      "command": "cargo",
+      "args": [
+        "run"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": {
+        "kind": "none"
+      },
+      "problemMatcher": [
+        "$rustc"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "detail": "Run the current crate (debug build)"
+    },
+    {
+      "label": "cargo: run (release)",
+      "type": "shell",
+      "command": "cargo",
+      "args": [
+        "run",
+        "--release"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": {
+        "kind": "none"
+      },
+      "problemMatcher": [
+        "$rustc"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "detail": "Run the current crate (release build)"
+    },
+    {
+      "label": "cargo: test (debug)",
+      "type": "shell",
+      "command": "cargo",
+      "args": [
+        "test"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        "$rustc"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "detail": "Run unit/integration tests (debug)"
+    },
+    {
+      "label": "cargo: test (release)",
+      "type": "shell",
+      "command": "cargo",
+      "args": [
+        "test",
+        "--release"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "test",
+      "problemMatcher": [
+        "$rustc"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "detail": "Run unit/integration tests (release)"
+    },
+    {
+      "label": "cargo: check",
+      "type": "shell",
+      "command": "cargo",
+      "args": [
+        "check"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "none",
+      "problemMatcher": [
+        "$rustc"
+      ],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      },
+      "detail": "Run cargo check to quickly verify code compiles"
+    },
+    {
+      "label": "cargo: clippy",
+      "type": "shell",
+      "command": "cargo",
+      "args": [
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "none",
+      "problemMatcher": [
+        "$rustc"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "detail": "Run clippy with warnings treated as errors"
+    },
+    {
+      "label": "cargo: fmt",
+      "type": "shell",
+      "command": "cargo",
+      "args": [
+        "fmt",
+        "--all"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "none",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      },
+      "detail": "Format the code using rustfmt"
+    },
+    {
+      "label": "cargo: doc",
+      "type": "shell",
+      "command": "cargo",
+      "args": [
+        "doc",
+        "--no-deps"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "none",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "detail": "Generate documentation for the workspace (no dependencies)"
+    },
+    {
+      "label": "cargo: clean",
+      "type": "shell",
+      "command": "cargo",
+      "args": [
+        "clean"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "none",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      },
+      "detail": "Remove build artifacts"
+    },
+    {
+      "label": "cargo: bench",
+      "type": "shell",
+      "command": "cargo",
+      "args": [
+        "bench"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "none",
+      "problemMatcher": [
+        "$rustc"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "detail": "Run benchmarks (requires nightly or bench feature depending on configuration)"
+    }
+  ]
+}
