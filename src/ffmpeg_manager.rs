@@ -9,6 +9,11 @@ pub enum DlMsg {
     Failed(String),
 }
 
+#[inline]
+pub fn supports_auto_download() -> bool {
+    cfg!(windows)
+}
+
 pub fn cached_ffmpeg_path() -> PathBuf {
     #[cfg(windows)]
     let exe_name = "ffmpeg.exe";

@@ -101,11 +101,15 @@ impl App {
             }
         }
 
-        // auto-download ffmpeg if not found
+        // Auto-download ffmpeg only on supported platforms (Windows).
         let (dl_rx, status_msg) = if ffmpeg_path.is_none() {
-            let (tx, rx) = crossbeam_channel::bounded::<DlMsg>(8);
-            ffmpeg_manager::start_download(tx);
-            (Some(rx), String::from("Fetching ffmpeg..."))
+            if ffmpeg_manager::supports_auto_download() {
+                let (tx, rx) = crossbeam_channel::bounded::<DlMsg>(8);
+                ffmpeg_manager::start_download(tx);
+                (Some(rx), String::from("Fetching ffmpeg..."))
+            } else {
+                (None, String::from("ffmpeg not found - install it manually to enable MP3/FLAC/AAC/Opus"))
+            }
         } else {
             (None, String::from("ffmpeg found - all formats available"))
         };
@@ -123,6 +127,12 @@ impl App {
 
 
     fn retry_download(&mut self) {
+        if !ffmpeg_manager::supports_auto_download() {
+            self.dl_failed = true;
+            self.dl_error = Some(String::from("Automatic ffmpeg download is unsupported on this OS."));
+            self.status_msg = String::from("Install ffmpeg manually and restart the app.");
+            return;
+        }
         let (tx, rx) = crossbeam_channel::bounded::<DlMsg>(8);
         ffmpeg_manager::start_download(tx);
         self.dl_rx     = Some(rx);
@@ -402,6 +412,7 @@ impl eframe::App for App {
                                 .color(egui::Color32::from_rgb(220, 80, 80)).small());
                         }
                     }
+                    #[cfg(windows)]
                     ui.horizontal(|ui| {
                         if self.dl_rx.is_some() {
                             ui.spinner();
@@ -412,6 +423,8 @@ impl eframe::App for App {
                     });
                     ui.separator();
                     ui.label(egui::RichText::new(t(lang, "Manual setup:", "手動セットアップ:")).strong());
+                    #[cfg(windows)]
+                    {
                     ui.label(t(lang,
                         "1. Download ffmpeg from:",
                         "1. 下記から ffmpeg をダウンロード:"));
@@ -437,6 +450,27 @@ impl eframe::App for App {
                             .monospace().small()
                     );
                     ui.label(t(lang, "3. Restart the app.", "3. アプリを再起動してください。"));
+                    }
+                    #[cfg(not(windows))]
+                    {
+                        ui.label(t(lang,
+                            "1. Install ffmpeg via your package manager:",
+                            "1. パッケージマネージャで ffmpeg をインストール:"));
+                        ui.label(egui::RichText::new("   Debian/Ubuntu: sudo apt install ffmpeg").monospace().small());
+                        ui.label(egui::RichText::new("   Fedora:        sudo dnf install ffmpeg").monospace().small());
+                        ui.label(egui::RichText::new("   Arch:          sudo pacman -S ffmpeg").monospace().small());
+                        ui.label(t(lang,
+                            "2. Or place the ffmpeg binary here:",
+                            "2. または ffmpeg バイナリを以下に配置:"));
+                        let cache = ffmpeg_manager::cached_ffmpeg_path();
+                        ui.label(
+                            egui::RichText::new(format!("   {}", cache.display()))
+                                .monospace().small()
+                        );
+                        ui.label(t(lang,
+                            "3. Restart the app after installation.",
+                            "3. インストール後にアプリを再起動してください。"));
+                    }
                 });
             }
 

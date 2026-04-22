@@ -14,24 +14,32 @@ pub struct AudioCapture {
 impl AudioCapture {
     /// Start loopback capture, sending f32 samples to sender.
     pub fn start(sender: Sender<Vec<f32>>) -> Result<Self> {
-        // WASAPI is the default host on Windows.
-        // build_input_stream on output device creates WASAPI loopback.
-        // NOTE: Loopback capture is only supported on Windows (WASAPI).
-        //       On other platforms this will capture from the default input device instead.
-        #[cfg(not(windows))]
-        log::warn!("Loopback capture is only supported on Windows. Using default input device.");
-
         let host = cpal::default_host();
 
+        #[cfg(windows)]
         let device = host
             .default_output_device()
             .ok_or_else(|| anyhow::anyhow!("No output device found"))?;
 
-        log::info!("capture device: {:?}", device.name().ok());
+        #[cfg(not(windows))]
+        let device = host
+            .default_input_device()
+            .ok_or_else(|| anyhow::anyhow!("No input device found"))?;
 
+        #[cfg(windows)]
+        log::info!("capture device (loopback output): {:?}", device.name().ok());
+        #[cfg(not(windows))]
+        log::info!("capture device (default input): {:?}", device.name().ok());
+
+        #[cfg(windows)]
         let supported = device
             .default_output_config()
             .map_err(|e| anyhow::anyhow!("Failed to get output config: {e}"))?;
+
+        #[cfg(not(windows))]
+        let supported = device
+            .default_input_config()
+            .map_err(|e| anyhow::anyhow!("Failed to get input config: {e}"))?;
 
         let sample_rate = supported.sample_rate().0;
         let channels    = supported.channels();
@@ -108,7 +116,10 @@ impl AudioCapture {
         };
 
         stream.play()?;
+        #[cfg(windows)]
         log::info!("loopback capture started");
+        #[cfg(not(windows))]
+        log::info!("input capture started");
 
         Ok(Self { _stream: stream, sample_rate, channels })
     }
