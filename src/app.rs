@@ -159,6 +159,7 @@ impl App {
         }
     }
 
+    #[cfg(windows)]
     fn retry_download(&mut self) {
         if !ffmpeg_manager::supports_auto_download() {
             self.dl_failed = true;
