@@ -40,9 +40,13 @@ pub fn start_download(tx: Sender<DlMsg>) {
 
 fn download_inner(_tx: &Sender<DlMsg>) -> anyhow::Result<PathBuf> {
     #[cfg(not(windows))]
-    anyhow::bail!(
-        "Automatic ffmpeg download is only supported on Windows. Please install ffmpeg manually."
-    );
+    {
+        let _ = _tx.send(DlMsg::Downloading);
+        let _ = _tx.send(DlMsg::Extracting);
+        anyhow::bail!(
+            "Automatic ffmpeg download is only supported on Windows. Please install ffmpeg manually."
+        );
+    }
 
     #[cfg(windows)]
     {
